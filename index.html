@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Relatório de Produtividade Rodante</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: url('tv-rodante-banner.jpg') no-repeat center center fixed;
+      background-size: cover;
+      background-color: #0ce743ad;
+      font-size: 16px;
+    }
+    h2 {
+      text-align: center;
+      background-color: rgba(43, 138, 43, 0.541);
+      padding: 10px;
+      border-radius: 8px;
+    }
+    form {
+      background-color: rgba(255, 255, 255, 0);
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 1000px;
+      margin: auto;s
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #e2e7e2;
+      padding: 8px;
+      text-align: center;
+      font-size: 16px;
+      word-wrap: break-word;
+    }
+    th {
+      background-color: #13d353fd;
+    }
+    textarea, select, input[type="text"], input[type="date"], input[type="time"] {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    button {
+      padding: 12px 20px;
+      background-color: #00ff40;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 18px;
+      margin-top: 20px;
+      margin-right: 10px;
+      min-height: 44px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    img#logo {
+      display: block;
+      max-width: 180px;
+      margin: 0 auto 15px auto;
+    }
+
+    /* Responsivo - modo compacto para celular */
+    @media (max-width: 768px) {
+      body {
+        margin: 5px;
+        font-size: 13px;
+      }
+
+      form {
+        padding: 10px;
+      }
+
+      table, thead, tbody, th, td, tr {
+        display: block;
+        width: 100%;
+      }
+      thead {
+        display: none;
+      }
+      tr {
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        padding: 6px;
+        background-color: #fff;
+        border-radius: 6px;
+      }
+      td {
+        text-align: left;
+        position: relative;
+        padding: 5px 5px 5px 50%;
+        border: none;
+        border-bottom: 1px solid #ddd;
+        font-size: 13px;
+      }
+      td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        top: 4px;
+        font-weight: bold;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      button {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 10px;
+        font-size: 14px;
+        padding: 10px;
+        min-height: 40px;
+      }
+      select, input[type="time"], input[type="text"], input[type="date"], textarea {
+        font-size: 13px;
+        padding: 6px;
+      }
+      img#logo {
+        max-width: 120px;
+        margin-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <img id="logo" src="terraverde-logo.svg" alt="Logo" />
+  
+
+  <h2>Relatório de Produtividade Rodante</h2>
+
+  <form id="formRelatorio" onsubmit="return false;">
+    <label for="tecnico">Técnico:</label>
+    <select id="tecnico" name="tecnico" required>
+      <option value="">Selecione</option>
+      <option>Edson Ferreira</option>
+      <option>Jose Samuel</option>
+      <option>Wanderley</option>
+    </select><br><br>
+
+    <label for="data">Data:</label>
+    <input type="date" id="data" name="data" required><br><br>
+
+    <label for="diaSemana">Dia da Semana:</label>
+    <input type="text" id="diaSemana" name="diaSemana" readonly style="background:#eee; border:none; font-weight:bold;"><br><br>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Hora Início</th>
+          <th>Hora Término</th>
+          <th>Serviço (Código + Nome)</th>
+          <th>L.D</th>
+          <th>L.E</th>
+          <th>O.S</th>
+        </tr>
+      </thead>
+      <tbody id="linhasTabela"></tbody>
+    </table>
+
+    <label for="observacao">Observação:</label><br>
+    <textarea name="observacao" id="observacao" rows="4" required></textarea><br>
+
+    <button id="btnExportarExcel">Exportar para Excel</button>
+    <button type="button" onclick="compartilharWhatsApp()">Compartilhar no WhatsApp</button>
+  </form>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script>
+    const tbody = document.getElementById('linhasTabela');
+    const opcoesServico = `
+      <option value="">Selecione</option>
+      <option value="1 - Retirar truck">1 - Retirar truck</option>
+      <option value="2 - Colocar truck">2 - Colocar truck</option>
+      <option value="3 - Retirar esteira da máquina">3 - Retirar esteira da máquina</option>
+      <option value="4 - Instalar esteira da máquina">4 - Instalar esteira da máquina</option>
+      <option value="5 - Retirar esteira Reserva TV">5 - Retirar esteira Reserva TV</option>
+      <option value="6 - Instalar esteira Reserva TV">6 - Instalar esteira Reserva TV</option>
+      <option value="7 - Substituir Roda Motriz">7 - Substituir Roda Motriz</option>
+      <option value="8 - Substituir Roda Guia">8 - Substituir Roda Guia</option>
+      <option value="9 - Substituir Mola Tensora">9 - Substituir Mola Tensora</option>
+      <option value="10 - Substituir Roletes Inferiores">10 - Substituir Roletes Inferiores</option>
+      <option value="11 - Substituir Roletes Superiores">11 - Substituir Roletes Superiores</option>
+      <option value="12 - Reaperto de Truck">12 - Reaperto de Truck</option>
+      <option value="13 - Substituir Rolamento Truck">13 - Substituir Rolamento Truck</option>
+      <option value="14 - Reparo de Botinha">14 - Reparo de Botinha</option>
+      <option value="15 - Deslocamento">15 - Deslocamento</option>
+      <option value="16 - Almoço">16 - Almoço</option>
+      <option value="17 - Outros Serviços/Medição Rodante">17 - Outros Serviços/Medição Rodante</option>
+    `;
+
+    for (let i = 1; i <= 10; i++) {
+      const linha = document.createElement('tr');
+      linha.innerHTML = `
+        <td data-label="Hora Início"><input type="time" name="inicio${i}"></td>
+        <td data-label="Hora Término"><input type="time" name="termino${i}"></td>
+        <td data-label="Serviço">
+          <select name="servico${i}" required>${opcoesServico}</select>
+        </td>
+        <td data-label="L.D"><input type="text" name="ld${i}"></td>
+        <td data-label="L.E"><input type="text" name="le${i}"></td>
+        <td data-label="O.S"><input type="text" name="os${i}" required></td>
+      `;
+      tbody.appendChild(linha);
+    }
+
+    document.getElementById('data').addEventListener('change', e => {
+      const dataInput = e.target.value;
+      if (!dataInput) {
+        document.getElementById('diaSemana').value = "";
+        return;
+      }
+      const diasSemana = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+      const dataObj = new Date(dataInput + 'T00:00:00');
+      document.getElementById('diaSemana').value = diasSemana[dataObj.getDay()];
+    });
+
+    function validarCampos() {
+      const tecnico = document.getElementById('tecnico').value.trim();
+      const data = document.getElementById('data').value.trim();
+      const observacao = document.getElementById('observacao').value.trim();
+
+      if (!tecnico || !data || !observacao) {
+        alert("Preencha todos os campos obrigatórios.");
+        return false;
+      }
+
+      let algumServico = false;
+      for (let i = 1; i <= 10; i++) {
+        const servico = document.querySelector(`select[name=servico${i}]`).value.trim();
+        if (servico) {
+          algumServico = true;
+          break;
+        }
+      }
+      if (!algumServico) {
+        alert("Preencha pelo menos um serviço.");
+        return false;
+      }
+
+      return true;
+    }
+
+    document.getElementById('btnExportarExcel').addEventListener('click', () => {
+      if (!validarCampos()) return;
+
+      const tecnico = document.getElementById('tecnico').value;
+      const data = document.getElementById('data').value;
+      const diaSemana = document.getElementById('diaSemana').value;
+      const observacao = document.getElementById('observacao').value;
+
+      const wb = XLSX.utils.book_new();
+      wb.Props = { Title: "Relatório de Produtividade Rodante", CreatedDate: new Date() };
+      wb.SheetNames.push("Relatório");
+
+      const dados = [];
+      dados.push(["Técnico", tecnico]);
+      dados.push(["Data", data]);
+      dados.push(["Dia da Semana", diaSemana]);
+      dados.push([]);
+      dados.push(["Hora Início", "Hora Término", "Serviço", "L.D", "L.E", "O.S"]);
+
+      for (let i = 1; i <= 10; i++) {
+        const inicio = document.querySelector(`input[name=inicio${i}]`).value;
+        const termino = document.querySelector(`input[name=termino${i}]`).value;
+        const servico = document.querySelector(`select[name=servico${i}]`).value;
+        const ld = document.querySelector(`input[name=ld${i}]`).value;
+        const le = document.querySelector(`input[name=le${i}]`).value;
+        const os = document.querySelector(`input[name=os${i}]`).value;
+        if (servico) {
+          dados.push([inicio, termino, servico, ld, le, os]);
+        }
+      }
+
+      dados.push([]);
+      dados.push(["Observação", observacao]);
+
+      const ws = XLSX.utils.aoa_to_sheet(dados);
+      wb.Sheets["Relatório"] = ws;
+      XLSX.writeFile(wb, `Relatorio_${tecnico}_${data}.xlsx`);
+    });
+
+    function compartilharWhatsApp() {
+      if (!validarCampos()) return;
+
+      const tecnico = document.getElementById('tecnico').value;
+      const data = document.getElementById('data').value;
+      const mensagem = `Relatório de produtividade:\nTécnico: ${tecnico}\nData: ${data}\nO relatório foi exportado como Excel.`;
+      const link = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+      window.open(link, '_blank');
+    }
+  </script>
+ 
+</body>
+</html>
+
